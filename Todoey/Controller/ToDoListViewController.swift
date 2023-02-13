@@ -11,18 +11,11 @@ import UIKit
 class ToDoListViewController: UITableViewController {
     let defults = UserDefaults.standard
     var itemArrey = [Item]()
-    
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("items.plist")
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let items = defults.array(forKey: "ToDoListItemsModel") as? [Item] {
-            itemArrey = items
-            
-        }
-        let newItem1 = Item()
-        newItem1.title = "Say Hello"
-
-        itemArrey.append(newItem1)
-
+       print(dataFilePath)
+        loadItem()
     }
     //MARK: - TableView Datasource Methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -32,16 +25,14 @@ class ToDoListViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         let item = itemArrey[indexPath.row]
         cell.textLabel?.text = item.title
-        cell.accessoryType = (item.done == true) ? .checkmark : .none
+        cell.accessoryType = item.done  ? .checkmark : .none
         return cell
     }
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         tableView.deselectRow(at: indexPath, animated: true)
         itemArrey[indexPath.row].done = !itemArrey[indexPath.row].done
-        tableView.reloadData()
-        //defults.set(itemArrey, forKey: "ToDoListItemsModel")
-
+        saveItem()
         
     }
     //MARK: - add button
@@ -54,8 +45,7 @@ class ToDoListViewController: UITableViewController {
                 let newItem = Item()
                 newItem.title = safeAddedItem
                 self.itemArrey.append(newItem)
-                self.defults.set(self.itemArrey, forKey: "ToDoListItemsModel")
-                self.tableView.reloadData()
+                self.saveItem()
             }
         }
         alert.addTextField { AlertTextField in
@@ -66,6 +56,27 @@ class ToDoListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
-    
+    func saveItem(){
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(itemArrey)
+            try data.write(to: dataFilePath!)
+        }catch{
+            print ("error encoding item array, \(error)")
+        }
+
+        tableView.reloadData()
+    }
+    func loadItem() {
+        if  let data = try? Data(contentsOf: dataFilePath!){
+            let decoder = PropertyListDecoder()
+            do{
+                itemArrey = try decoder.decode([Item].self, from: data)
+            }catch{
+                print("error decoding item array,\(error)")
+            }
+        }
+        
+    }
 }
 
