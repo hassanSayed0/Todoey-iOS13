@@ -28,21 +28,21 @@ struct SyncError;
 using SyncSessionErrorHandler = void(std::shared_ptr<SyncSession>, SyncError);
 }
 
-NS_ASSUME_NONNULL_BEGIN
+RLM_HEADER_AUDIT_BEGIN(nullability, sendability)
 
 @interface RLMSyncConfiguration ()
 
-- (instancetype)initWithUser:(RLMSyncUser *)user
-                    realmURL:(NSURL *)url
-               customFileURL:(nullable NSURL *)customFileURL
-                   isPartial:(BOOL)isPartial
-                  stopPolicy:(RLMSyncStopPolicy)stopPolicy
-                errorHandler:(std::function<realm::SyncSessionErrorHandler>)errorHandler;
+- (instancetype)initWithRawConfig:(realm::SyncConfig)config path:(std::string const&)path;
+- (realm::SyncConfig&)rawConfiguration;
 
-- (instancetype)initWithRawConfig:(realm::SyncConfig)config;
+// Pass the RLMRealmConfiguration to it's sync configuration so client reset callbacks
+// can access schema, dynamic, and path properties.
+void RLMSetConfigInfoForClientResetCallbacks(realm::SyncConfig& syncConfig, RLMRealmConfiguration *config);
 
-- (realm::SyncConfig)rawConfiguration;
+@property (nonatomic) std::string path;
 
 @end
 
-NS_ASSUME_NONNULL_END
+NSError *_Nullable RLMTranslateSyncError(realm::SyncError);
+
+RLM_HEADER_AUDIT_END(nullability, sendability)

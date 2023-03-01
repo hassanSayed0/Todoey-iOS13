@@ -27,7 +27,7 @@ import Realm
 /**
  `PropertyType` is an enum describing all property types supported in Realm models.
 
- For more information, see [Realm Models](https://realm.io/docs/swift/latest/#models).
+ For more information, see [Object Models and Schemas](https://www.mongodb.com/docs/realm/sdk/swift/fundamentals/object-models-and-schemas/).
 
  ### Primitive types
 
@@ -41,6 +41,8 @@ import Realm
  * `String`
  * `Data`
  * `Date`
+ * `Decimal128`
+ * `ObjectId`
 
  ### Relationships: Array (in Swift, `List`) and `Object` types
 
@@ -56,7 +58,42 @@ public typealias PropertyType = RLMPropertyType
  */
 public typealias NotificationToken = RLMNotificationToken
 
-extension NotificationToken {
-    @available(*, unavailable, renamed: "invalidate()")
-    @nonobjc public func stop() { fatalError() }
+/// :nodoc:
+public typealias ObjectBase = RLMObjectBase
+extension ObjectBase {
+    internal func _observe<T: ObjectBase>(keyPaths: [String]? = nil,
+                                          on queue: DispatchQueue? = nil,
+                                          _ block: @escaping (ObjectChange<T>) -> Void) -> NotificationToken {
+        return RLMObjectBaseAddNotificationBlock(self, keyPaths, queue) { object, names, oldValues, newValues, error in
+            assert(error == nil)
+            guard let names = names, let newValues = newValues else {
+                block(.deleted)
+                return
+            }
+
+            block(.change(object as! T, (0..<newValues.count).map { i in
+                PropertyChange(name: names[i], oldValue: oldValues?[i], newValue: newValues[i])
+            }))
+        }
+    }
+
+    internal func _observe<T: ObjectBase>(keyPaths: [String]? = nil,
+                                          on queue: DispatchQueue? = nil,
+                                          _ block: @escaping (T?) -> Void) -> NotificationToken {
+        return RLMObjectBaseAddNotificationBlock(self, keyPaths, queue) { object, names, _, _, _ in
+            if names == nil {
+                block(nil)
+            } else {
+                block((object as! T))
+            }
+        }
+    }
+
+    internal func _observe(keyPaths: [String]? = nil,
+                           on queue: DispatchQueue? = nil,
+                           _ block: @escaping () -> Void) -> NotificationToken {
+        return RLMObjectBaseAddNotificationBlock(self, keyPaths, queue) { _, _, _, _, _ in
+            block()
+        }
+    }
 }

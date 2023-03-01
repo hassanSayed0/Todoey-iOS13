@@ -22,5 +22,18 @@
 
 @protocol RLMFastEnumerable;
 
-void RLMCollectionSetValueForKey(id<RLMFastEnumerable> collection, NSString *key, id value);
+RLM_HEADER_AUDIT_BEGIN(nullability, sendability)
+
+NSUInteger RLMUnmanagedFastEnumerate(id collection, NSFastEnumerationState *);
+void RLMCollectionSetValueForKey(id<RLMFastEnumerable> collection, NSString *key, id _Nullable value);
 FOUNDATION_EXTERN NSString *RLMDescriptionWithMaxDepth(NSString *name, id<RLMCollection> collection, NSUInteger depth);
+FOUNDATION_EXTERN void RLMAssignToCollection(id<RLMCollection> collection, id value);
+FOUNDATION_EXTERN void RLMSetSwiftBridgeCallback(id _Nullable (*_Nonnull)(id));
+
+typedef RLM_CLOSED_ENUM(int32_t, RLMCollectionType) {
+    RLMCollectionTypeArray = 0,
+    RLMCollectionTypeSet = 1,
+    RLMCollectionTypeDictionary = 2
+};
+
+RLM_HEADER_AUDIT_END(nullability, sendability)
